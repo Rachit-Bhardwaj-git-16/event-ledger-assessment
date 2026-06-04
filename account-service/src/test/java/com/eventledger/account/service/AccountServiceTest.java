@@ -118,43 +118,42 @@ class AccountServiceTest {
 
     @Test
     void testBalanceCalculation_CreditAndDebit() {
-        // Arrange
+
         Account account = Account.builder()
-            .id(1L)
-            .accountId("acct-123")
-            .balance(BigDecimal.ZERO)
-            .currency("USD")
-            .build();
+                .id(1L)
+                .accountId("acct-123")
+                .balance(BigDecimal.ZERO)
+                .currency("USD")
+                .build();
 
         Transaction credit = Transaction.builder()
-            .id(1L)
-            .accountId("acct-123")
-            .eventId("evt-001")
-            .type(Transaction.TransactionType.CREDIT)
-            .amount(new BigDecimal("100.00"))
-            .currency("USD")
-            .eventTimestamp(Instant.now().minusSeconds(60))
-            .build();
+                .id(1L)
+                .accountId("acct-123")
+                .eventId("evt-001")
+                .type(Transaction.TransactionType.CREDIT)
+                .amount(new BigDecimal("100.00"))
+                .currency("USD")
+                .eventTimestamp(Instant.now().minusSeconds(60))
+                .build();
 
         Transaction debit = Transaction.builder()
-            .id(2L)
-            .accountId("acct-123")
-            .eventId("evt-002")
-            .type(Transaction.TransactionType.DEBIT)
-            .amount(new BigDecimal("30.00"))
-            .currency("USD")
-            .eventTimestamp(Instant.now())
-            .build();
+                .id(2L)
+                .accountId("acct-123")
+                .eventId("evt-002")
+                .type(Transaction.TransactionType.DEBIT)
+                .amount(new BigDecimal("30.00"))
+                .currency("USD")
+                .eventTimestamp(Instant.now())
+                .build();
 
-        when(accountRepository.findByAccountId("acct-123")).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountId("acct-123"))
+                .thenReturn(Optional.of(account));
+
         when(transactionRepository.findByAccountIdOrderedByTimestamp("acct-123"))
-            .thenReturn(List.of(credit, debit));
-        when(accountRepository.save(any(Account.class))).thenReturn(account);
+                .thenReturn(List.of(credit, debit));
 
-        // Act
         BalanceResponse response = accountService.getBalance("acct-123");
 
-        // Assert
         assertNotNull(response);
         assertEquals(new BigDecimal("70.00"), response.getBalance());
     }

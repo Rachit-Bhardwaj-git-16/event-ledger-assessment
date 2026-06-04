@@ -78,18 +78,31 @@ public class AccountService {
 
     public BalanceResponse getBalance(String accountId) {
         log.info("Fetching balance for account: {}", accountId);
-        
+
         Account account = accountRepository.findByAccountId(accountId)
-            .orElseThrow(() -> {
-                log.warn("Account not found: {}", accountId);
-                return new RuntimeException("Account not found");
-            });
+                .orElseThrow(() -> {
+                    log.warn("Account not found: {}", accountId);
+                    return new RuntimeException("Account not found");
+                });
+
+        List<Transaction> transactions =
+                transactionRepository.findByAccountIdOrderedByTimestamp(accountId);
+
+        BigDecimal balance = BigDecimal.ZERO;
+
+        for (Transaction transaction : transactions) {
+            if (transaction.getType() == Transaction.TransactionType.CREDIT) {
+                balance = balance.add(transaction.getAmount());
+            } else {
+                balance = balance.subtract(transaction.getAmount());
+            }
+        }
 
         return BalanceResponse.builder()
-            .accountId(accountId)
-            .balance(account.getBalance())
-            .currency(account.getCurrency())
-            .build();
+                .accountId(accountId)
+                .balance(balance)
+                .currency(account.getCurrency())
+                .build();
     }
 
     public AccountResponse getAccount(String accountId) {
