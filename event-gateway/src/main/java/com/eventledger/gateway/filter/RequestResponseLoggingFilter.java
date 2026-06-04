@@ -23,9 +23,8 @@ import java.time.Instant;
 @Slf4j
 public class RequestResponseLoggingFilter implements Filter {
 
-    // Skip logging for noisy actuator/health/h2-console endpoints
     private static final String[] SKIP_PATHS = {
-        "/actuator", "/h2-console", "/swagger-ui", "/v3/api-docs"
+            "/actuator", "/h2-console", "/swagger-ui", "/v3/api-docs"
     };
 
     @Override
@@ -35,7 +34,6 @@ public class RequestResponseLoggingFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        // Skip noisy internal paths
         String uri = httpRequest.getRequestURI();
         for (String skip : SKIP_PATHS) {
             if (uri.startsWith(skip)) {
@@ -44,12 +42,16 @@ public class RequestResponseLoggingFilter implements Filter {
             }
         }
 
-        // Wrap request and response so we can read body without consuming the stream
         ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(httpRequest);
         ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(httpResponse);
 
         long startTime = Instant.now().toEpochMilli();
-        String traceId = MDC.get("traceId");
+
+        // Get traceId from header first, fallback to MDC
+        String traceId = httpRequest.getHeader("X-Trace-Id");
+        if (traceId == null || traceId.isEmpty()) {
+            traceId = MDC.get("traceId");
+        }
 
         try {
             chain.doFilter(wrappedRequest, wrappedResponse);
@@ -72,7 +74,6 @@ public class RequestResponseLoggingFilter implements Filter {
                         httpRequest.getMethod(), uri, status, duration, traceId);
             }
 
-            // MUST copy body back — otherwise client gets empty response
             wrappedResponse.copyBodyToResponse();
         }
     }
@@ -80,7 +81,6 @@ public class RequestResponseLoggingFilter implements Filter {
     private String getBody(byte[] content) {
         if (content == null || content.length == 0) return "";
         String body = new String(content, StandardCharsets.UTF_8);
-        // Truncate very large bodies to avoid log bloat
         return body.length() > 500 ? body.substring(0, 500) + "...[truncated]" : body;
     }
 }

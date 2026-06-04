@@ -23,7 +23,7 @@ import java.time.Instant;
 public class RequestResponseLoggingFilter implements Filter {
 
     private static final String[] SKIP_PATHS = {
-        "/actuator", "/h2-console", "/swagger-ui", "/v3/api-docs"
+            "/actuator", "/h2-console", "/swagger-ui", "/v3/api-docs"
     };
 
     @Override
@@ -45,7 +45,12 @@ public class RequestResponseLoggingFilter implements Filter {
         ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(httpResponse);
 
         long startTime = Instant.now().toEpochMilli();
-        String traceId = MDC.get("traceId");
+
+        // Get traceId from header first (propagated from Gateway), fallback to MDC
+        String traceId = httpRequest.getHeader("X-Trace-Id");
+        if (traceId == null || traceId.isEmpty()) {
+            traceId = MDC.get("traceId");
+        }
 
         try {
             chain.doFilter(wrappedRequest, wrappedResponse);
