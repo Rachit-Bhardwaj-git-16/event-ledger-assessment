@@ -175,6 +175,7 @@ curl -X POST http://localhost:8080/events \
 - Account Service called BEFORE saving to Gateway DB — prevents ghost events
 - Balance recalculated from all transactions on every update — ensures out-of-order correctness
 - Circuit breaker chosen over bulkhead — Account Service is synchronous and business-critical
- 
+
+- **Request/Response Logging**: Every incoming HTTP request and outgoing response is logged with method, URI, status code, duration (ms), traceId, and request body. Error responses (4xx/5xx) are logged at WARN level with response body for easier debugging. Internal paths (actuator, swagger, h2-console) are excluded from logging to reduce noise.
 
 
