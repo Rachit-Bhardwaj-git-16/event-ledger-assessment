@@ -4,6 +4,7 @@ A distributed event ledger system built with Spring Boot, composed of two indepe
 
 ---
 
+
 ## Architecture Overview
 
 ```
@@ -169,3 +170,11 @@ curl -X POST http://localhost:8080/events \
 - **Distributed tracing**: `X-Trace-Id` header generated at the gateway, propagated to account service, logged by both, and returned in the response header.
 - **Custom metrics**: `events_created_total`, `events_failed_total` (gateway), `account_transactions_total` (account service) — exposed via `/actuator/prometheus`.
 - **Jaeger**: Trace visualisation at `http://localhost:16686` when running via Docker Compose.
+
+## Design Decisions
+- Account Service called BEFORE saving to Gateway DB — prevents ghost events
+- Balance recalculated from all transactions on every update — ensures out-of-order correctness
+- Circuit breaker chosen over bulkhead — Account Service is synchronous and business-critical
+ 
+
+
