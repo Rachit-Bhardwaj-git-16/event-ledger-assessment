@@ -164,6 +164,17 @@ curl -X POST http://localhost:8080/events \
 
 ---
 
+## Test Execution
+
+All automated tests were executed successfully.
+
+BUILD SUCCESS
+Failures: 0
+Errors: 0
+
+<img width="1920" height="1023" alt="image" src="https://github.com/user-attachments/assets/46cab937-d22f-4510-b758-231465aa35eb" />
+
+
 ## Observability
 
 - **Structured JSON logging**: Both services emit JSON logs (via `logstash-logback-encoder`) with `traceId`, `timestamp`, `level`, and `service` fields.
