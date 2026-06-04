@@ -1,0 +1,86 @@
+spring:
+  application:
+    name: event-gateway
+  datasource:
+    url: jdbc:h2:mem:eventdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  h2:
+    console:
+      enabled: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.eventledger: DEBUG
+  config: classpath:logback-spring.xml
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      account-service:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 5000
+        failureRateThreshold: 50
+        recordExceptions:
+          - java.io.IOException
+          - org.springframework.web.client.HttpServerErrorException
+          - feign.FeignException
+  retry:
+    instances:
+      account-service:
+        registerHealthIndicator: false
+        maxAttempts: 3
+        waitDuration: 1000
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - java.io.IOException
+          - feign.FeignException$ServiceUnavailable
+  timeout:
+    instances:
+      account-service:
+        timeoutDuration: 5000
+
+# Supports override via ACCOUNT_SERVICE_URL env variable (used in Docker)
+account-service:
+  url: ${ACCOUNT_SERVICE_URL:http://localhost:8081}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  api-docs:
+    path: /v3/api-docs
